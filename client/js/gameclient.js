@@ -31,7 +31,6 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             this.handlers[Types.Messages.KILL] = this.receiveKill;
             this.handlers[Types.Messages.HP] = this.receiveHitPoints;
             this.handlers[Types.Messages.BLINK] = this.receiveBlink;
-            this.handlers[Types.Messages.PONG] = this.receivePong;
         
             this.useBison = false;
             this.enable();
@@ -52,7 +51,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
              
             this.connection = io(url, {'force new connection':true});
             this.connection.on('connection', function(socket){
-                console.log("Connected to server " + url);
+                log.info("Connected to server " + url);
             });
 
             /******
@@ -89,10 +88,6 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                         self.isTimeout = true;
                         return;
                     }
-                    if (self.connected_callback) {
-                        self.connected_callback();
-                    }
-                    self.startPingLoop();
                     
                     self.receiveMessage(data);
                 });
@@ -534,39 +529,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         sendCheck: function(id) {
             this.sendMessage([Types.Messages.CHECK,
                               id]);
-        },
-        receivePong: function(data) {
-            const latency = Date.now() - this.pingSentAt;
-            console.log("PONG reçu - Latence estimée: " + latency + " ms");
-      
-            if (!this.pings) {
-              this.pings = [];
-            }
-      
-            this.pings.push(latency);
-            if (this.pings.length > 50) this.pings.shift();
-      
-            const average = Math.round(
-              this.pings.reduce((a, b) => a + b, 0) / this.pings.length
-            );
-            const max = Math.max(...this.pings);
-            const min = Math.min(...this.pings);
-      
-            console.log(
-              `📡 Latence: Moyenne ${average} ms, Min ${min} ms, Max ${max} ms`
-            );
-          },
-        sendPing: function() {
-            this.pingSentAt = Date.now();
-            this.sendMessage([Types.Messages.PING]);
-        },
-        startPingLoop: function() {
-            const self = this;
-            setInterval(function() {
-                self.sendPing();
-            }, 5000);
         }
-
     });
     
     return GameClient;

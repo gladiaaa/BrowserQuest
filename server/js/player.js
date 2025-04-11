@@ -7,8 +7,6 @@ var cls = require("./lib/class"),
     Formulas = require("./formulas"),
     check = require("./format").check,
     Types = require("../../shared/js/gametypes");
-    const Log = require('log');
-    const log = new Log(Log.DEBUG);
 
 module.exports = Player = Character.extend({
     init: function(connection, worldServer) {
@@ -25,7 +23,6 @@ module.exports = Player = Character.extend({
         this.lastCheckpoint = null;
         this.formatChecker = new FormatChecker();
         this.disconnectTimeout = null;
-
         
         this.connection.listen(function(message) {
 
@@ -41,7 +38,8 @@ module.exports = Player = Character.extend({
                 self.connection.close("Invalid handshake message: "+message);
                 return;
             }
-            if(self.hasEnteredGame && !self.isDead && action == Types.Messages.HELLO) { // HELLO can be sent only once
+            if(self.hasEnteredGame && !self.isDead && action === Types.Messages.HELLO) { // HELLO can be sent only once
+                self.connection.close("Cannot initiate handshake twice: "+message);
                 return;
             }
             
