@@ -49,7 +49,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                     }
                 }
             
-                console.log('Player '+this.id+' has looted '+item.id);
+                console.log("Player " + this.id + " has looted " + item.id);
                 if(Types.isArmor(item.kind) && this.invincible) {
                     this.stopInvincibility();
                 }

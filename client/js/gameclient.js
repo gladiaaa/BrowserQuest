@@ -31,6 +31,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             this.handlers[Types.Messages.KILL] = this.receiveKill;
             this.handlers[Types.Messages.HP] = this.receiveHitPoints;
             this.handlers[Types.Messages.BLINK] = this.receiveBlink;
+            this.handlers[Types.Messages.PONG] = this.receivePong;
         
             this.useBison = false;
             this.enable();
@@ -49,15 +50,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 self = this;
 
              
-            this.connection = io(url, {
-                'force new connection': true,
-                transports: ['websocket'],
-                upgrade: false,
-                withCredentials: true,
-                extraHeaders: {
-                    "Access-Control-Allow-Origin": "*"
-                }
-            });
+            this.connection = io(url, {'force new connection':true});
             this.connection.on('connection', function(socket){
                 console.log("Connected to server " + url);
             });
@@ -96,16 +89,20 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                         self.isTimeout = true;
                         return;
                     }
+                    if (self.connected_callback) {
+                        self.connected_callback();
+                    }
+                    self.startPingLoop();
                     
                     self.receiveMessage(data);
                 });
 
                 /*this.connection.onerror = function(e) {
-                    console.log(e, true);
+                    log.error(e, true);
                 };*/
 
                 this.connection.on("disconnect", function() {
-                    console.log("Connection closed");
+                    log.debug("Connection closed");
                     $('#container').addClass('error');
                     
                     if(self.disconnected_callback) {
@@ -129,7 +126,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         
             if(this.isListening) {
        
-                console.log("data: " + message);
+                log.debug("data: " + message);
 
                 if(message instanceof Array) {
                     if(message[0] instanceof Array) {
@@ -149,7 +146,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 this.handlers[action].call(this, data);
             }
             else {
-                console.log("Unknown action : " + action);
+                log.error("Unknown action : " + action);
             }
         },
     
@@ -537,7 +534,39 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         sendCheck: function(id) {
             this.sendMessage([Types.Messages.CHECK,
                               id]);
+        },
+        receivePong: function(data) {
+            const latency = Date.now() - this.pingSentAt;
+            console.log("PONG reçu - Latence estimée: " + latency + " ms");
+      
+            if (!this.pings) {
+              this.pings = [];
+            }
+      
+            this.pings.push(latency);
+            if (this.pings.length > 50) this.pings.shift();
+      
+            const average = Math.round(
+              this.pings.reduce((a, b) => a + b, 0) / this.pings.length
+            );
+            const max = Math.max(...this.pings);
+            const min = Math.min(...this.pings);
+      
+            console.log(
+              `📡 Latence: Moyenne ${average} ms, Min ${min} ms, Max ${max} ms`
+            );
+          },
+        sendPing: function() {
+            this.pingSentAt = Date.now();
+            this.sendMessage([Types.Messages.PING]);
+        },
+        startPingLoop: function() {
+            const self = this;
+            setInterval(function() {
+                self.sendPing();
+            }, 5000);
         }
+
     });
     
     return GameClient;

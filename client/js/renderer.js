@@ -94,15 +94,15 @@ function(Camera, Item, Character, Player, Timer) {
         
             this.canvas.width = this.camera.gridW * this.tilesize * this.scale;
             this.canvas.height = this.camera.gridH * this.tilesize * this.scale;
-            console.log("#entities set to "+this.canvas.width+" x "+this.canvas.height);
+            log.debug("#entities set to "+this.canvas.width+" x "+this.canvas.height);
         
             this.backcanvas.width = this.canvas.width;
             this.backcanvas.height = this.canvas.height;
-            console.log("#background set to "+this.backcanvas.width+" x "+this.backcanvas.height);
+            log.debug("#background set to "+this.backcanvas.width+" x "+this.backcanvas.height);
         
             this.forecanvas.width = this.canvas.width;
             this.forecanvas.height = this.canvas.height;
-            console.log("#foreground set to "+this.forecanvas.width+" x "+this.forecanvas.height);
+            log.debug("#foreground set to "+this.forecanvas.width+" x "+this.forecanvas.height);
         },
     
         initFPS: function() {
@@ -285,7 +285,7 @@ function(Camera, Item, Character, Player, Timer) {
             var s = this.upscaledRendering ? 1 : this.scale;
             _.each(arguments, function(arg) {
                 if(_.isUndefined(arg) || _.isNaN(arg) || _.isNull(arg) || arg < 0) {
-                    console.log("x:"+x+" y:"+y+" w:"+w+" h:"+h+" dx:"+dx+" dy:"+dy, true);
+                    log.error("x:"+x+" y:"+y+" w:"+w+" h:"+h+" dx:"+dx+" dy:"+dy, true);
                     throw Error("A problem occured when trying to draw on the canvas");
                 }
             });
@@ -477,7 +477,7 @@ function(Camera, Item, Character, Player, Timer) {
             }
             
             if(count > 0) {
-                //console.log("count:"+count);
+                //log.debug("count:"+count);
             }
         },
         
@@ -718,6 +718,23 @@ function(Camera, Item, Character, Player, Timer) {
         },
 
         renderFrame: function() {
+            if (!this._lastRenderTime) {
+                this._lastRenderTime = performance.now();
+                this._frameCount = 0;
+                this._fpsLogInterval = 1000; // en ms
+            }
+            
+            this._frameCount++;
+            const now = performance.now();
+            const elapsed = now - this._lastRenderTime;
+            
+            if (elapsed >= this._fpsLogInterval) {
+                const fps = (this._frameCount / elapsed) * 1000;
+                console.log(`🎮 FPS estimé : ${fps.toFixed(1)}`);
+                this._lastRenderTime = now;
+                this._frameCount = 0;
+            }
+            
             if(this.mobile || this.tablet) {
                 this.renderFrameMobile();
             }

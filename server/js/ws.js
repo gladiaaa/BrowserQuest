@@ -88,7 +88,12 @@ var Connection = cls.Class.extend({
     },
     
     close: function(logError) {
-        console.log("Closing connection to "+this._connection.remoteAddress+". Error: "+logError);
+        console.log(
+          "Closing connection to " +
+            this._connection.remoteAddress +
+            ". Error: " +
+            logError
+        );
         this._connection.close();
     }
 });
@@ -102,52 +107,31 @@ var Connection = cls.Class.extend({
 
 WS.socketIOServer = Server.extend({
     init: function(host, port) {
-        self = this;
-        self.host = host;
-        self.port = port;
-        var app = require('express')();
-        // Add CORS middleware
-        app.use(function(req, res, next) {
-            res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-            next();
+        this.host = host;
+        this.port = port;
+    
+        const app = require('express')();
+        const http = require('http').Server(app);
+        this.io = require('socket.io')(http);
+    
+        this.io.on('connection', (connection) => {
+            console.log("a user connected");
+            connection.remoteAddress = connection.handshake.address;
+    
+            const c = new WS.socketIOConnection(this._createId(), connection, this);
+            if (this.connection_callback) {
+                this.connection_callback(c);
+            }
+            this.addConnection(c);
         });
-        var http = require('http').Server(app);
-        self.io = require('socket.io')(http, {
-            cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
-            },
-            transports: ['websocket'],
-            allowEIO3: true
+    
+        this.io.on('error', (err) => {
+            console.error(err.stack);
+            if (this.error_callback) this.error_callback();
         });
-
-
-        self.io.on('connection', function(connection){
-          console.log('a user connected');
-
-          connection.remoteAddress = connection.handshake.address.address
-
-  
-          var c = new WS.socketIOConnection(self._createId(), connection, self);
-            
-          if(self.connection_callback) {
-                self.connection_callback(c);
-          }
-          self.addConnection(c);
-
-        });
-
-        
-
-        self.io.on('error', function (err) { 
-            console.log(err.stack); 
-            self.error_callback()
-
-         })
-
-        http.listen(port, function(){
-          console.log('listening on *:' + port);
+    
+        http.listen(port, () => {
+            console.log("listening on *:" + port);
         });
     },
 
@@ -182,16 +166,22 @@ WS.socketIOConnection = Connection.extend({
         });
 
         connection.on("message", function (message) {
-            console.log("Received: " + message)
+            console.log("Received: " + JSON.stringify(message));
+        
+            if (message[0] === Types.Messages.PING) {
+                self.send([Types.Messages.PONG]);
+                return;
+            }
+        
             if (self.listen_callback)
-                self.listen_callback(message)
+                self.listen_callback(message);
         });
 
         connection.on("disconnect", function () {
             if(self.close_callback) {
                 self.close_callback();
             }
-            delete self._server.removeConnection(self.id);
+            self._server.removeConnection(self.id);
         });
 
     },
@@ -209,12 +199,10 @@ WS.socketIOConnection = Connection.extend({
     },
 
     close: function(logError) {
-        console.log("Closing connection to socket"+". Error: " + logError);
+        console.log("Closing connection to socket" + ". Error: " + logError);
         this._connection.disconnect();
     }
     
-
-
 });
 
 

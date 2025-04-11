@@ -51,9 +51,9 @@ module.exports = Mob = Character.extend({
         }
 
         /*
-        console.log("Hatelist : "+this.id);
+        log.debug("Hatelist : "+this.id);
         _.each(this.hatelist, function(obj) {
-            console.log(obj.id + " -> " + obj.hate);
+            log.debug(obj.id + " -> " + obj.hate);
         });*/
         
         if(this.returnTimeout) {

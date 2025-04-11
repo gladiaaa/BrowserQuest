@@ -82,7 +82,7 @@ define(['jquery', 'animation', 'sprites'], function($, Animation, sprites) {
             	    height: this.height
             	};
     	    } catch(e) {
-    	        console.log("Error getting image data for sprite : "+this.name);
+    	        log.error("Error getting image data for sprite : "+this.name);
     	    }
         },
 	

@@ -7,6 +7,8 @@ var cls = require("./lib/class"),
     Formulas = require("./formulas"),
     check = require("./format").check,
     Types = require("../../shared/js/gametypes");
+    const Log = require('log');
+    const log = new Log(Log.DEBUG);
 
 module.exports = Player = Character.extend({
     init: function(connection, worldServer) {
@@ -23,12 +25,13 @@ module.exports = Player = Character.extend({
         this.lastCheckpoint = null;
         this.formatChecker = new FormatChecker();
         this.disconnectTimeout = null;
+
         
         this.connection.listen(function(message) {
 
             var action = parseInt(message[0]);
             
-            console.log("Received: " + message);
+            log.debug("Received: " + message);
             if(!check(message)) {
                 self.connection.close("Invalid "+Types.getMessageTypeAsString(action)+" message format: "+message);
                 return;
@@ -38,8 +41,7 @@ module.exports = Player = Character.extend({
                 self.connection.close("Invalid handshake message: "+message);
                 return;
             }
-            if(self.hasEnteredGame && !self.isDead && action === Types.Messages.HELLO) { // HELLO can be sent only once
-                self.connection.close("Cannot initiate handshake twice: "+message);
+            if(self.hasEnteredGame && !self.isDead && action == Types.Messages.HELLO) { // HELLO can be sent only once
                 return;
             }
             
@@ -346,7 +348,7 @@ module.exports = Player = Character.extend({
     
     equipItem: function(item) {
         if(item) {
-            console.log(this.name + " equips " + Types.getKindAsString(item.kind));
+            log.debug(this.name + " equips " + Types.getKindAsString(item.kind));
             
             if(Types.isArmor(item.kind)) {
                 this.equipArmor(item.kind);

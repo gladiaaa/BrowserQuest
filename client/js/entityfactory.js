@@ -5,7 +5,7 @@ define(['mobs', 'items', 'npcs', 'warrior', 'chest'], function(Mobs, Items, NPCs
 
     EntityFactory.createEntity = function(kind, id, name) {
         if(!kind) {
-            console.log("kind is undefined", true);
+            log.error("kind is undefined", true);
             return;
         }
     
